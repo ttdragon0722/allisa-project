@@ -44,8 +44,19 @@ class SOMReader(Excel):
 
         self.worksheet = self.workbook["工程專用"]
         self.path = path
-
-SOMReader()
+    
+    def get_table(self):
+        return super().get_table()
+    
+    def get_pieces(self):
+        pass
+    
+    def get_pieces(self):
+        return 
+        
+    def get_keywords(self):
+        return super().get_keywords()
+        
 
 class ExcelReader:
     def __init__(self):

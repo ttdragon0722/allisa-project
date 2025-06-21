@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from view.FileSelectionPage import FileSelectionPage
 from view.AccessPage import AccessPage
+from view.FilePickPage import FilePickPage
 
 class App(tk.Tk):
     def __init__(self):
@@ -27,12 +28,12 @@ class App(tk.Tk):
     
         # 註冊頁面
         self.frames = {}
-        for F in (FileSelectionPage,AccessPage):
+        for F in (FilePickPage,FileSelectionPage,AccessPage):
             frame = F(parent=container, controller=self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(FileSelectionPage)
+        self.show_frame(FilePickPage)
 
     def show_frame(self, page):
         frame = self.frames[page]

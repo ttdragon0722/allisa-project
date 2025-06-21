@@ -2,6 +2,22 @@ from dataclasses import dataclass,field
 from typing import List,Dict,Union
 from ..debug import Debug
 
+from datetime import datetime
+@dataclass
+class File:
+    path: str
+    name: str
+    mod_time: float  # timestamp
+    ext: str         # 副檔名（不含點）
+
+    def __repr__(self):
+        return f"<File name='{self.name}' ext='{self.ext}' modified='{self.mod_time_str}' full_path='{self.path}'>"
+
+    @property
+    def mod_time_str(self) -> str:
+        return datetime.fromtimestamp(self.mod_time).strftime('%Y-%m-%d %H:%M:%S')
+
+
 
 @dataclass
 class BoundingBox:
