@@ -7,6 +7,8 @@ from lib.debug import Debug
 from lib.data.models import File
 from .components import *
 from .AccessPage import AccessPage
+from .ValidPage import ValidPage
+
 class FilePickPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -170,12 +172,11 @@ class FilePickPage(tk.Frame):
             print(f"✅ 設定為前景：{file.name}")
             # 設定正面檔案路徑
             self.front_path.set(file.path)
-            # 同步更新 controller 中的 shared_data
-            self.controller.shared_data["front_path"] = self.get_cur_front()
+            
         finally:
-            # 不論是否有回傳都要更新畫面及通知 AccessPage
+            # 不論是否有回傳都要更新畫面
             self.update_file_blocks()
-            self.controller.frames[AccessPage].event_generate("<<PDFPATHS_UPDATED>>")
+            
 
     @Debug.event("set back_path", "blue")
     def set_back_path(self, file: File):
@@ -193,12 +194,12 @@ class FilePickPage(tk.Frame):
             print(f"✅ 設定為背景：{file.name}")
             # 設定背面檔案路徑
             self.back_path.set(file.path)
-            # 同步更新 controller 中的 shared_data
-            self.controller.shared_data["back_path"] = self.get_cur_back()
+            
+            
         finally:
-            # 不論是否有回傳都要更新畫面及通知 AccessPage
+            # 不論是否有回傳都要更新畫面
             self.update_file_blocks()
-            self.controller.frames[AccessPage].event_generate("<<PDFPATHS_UPDATED>>")
+
         
     # 取得目前正面路徑字串
     def get_cur_front(self):
@@ -220,4 +221,8 @@ class FilePickPage(tk.Frame):
             return
         
         # 路徑都設定後，切換到下一個畫面 AccessPage
-        self.controller.show_frame(AccessPage)
+        self.controller.show_frame(ValidPage)
+        self.controller.shared_data["front_path"] = self.get_cur_front()
+        self.controller.shared_data["back_path"] = self.get_cur_back()
+        # 通知變數變更
+        self.controller.frames[ValidPage].event_generate("<<PDFPATHS_UPDATED>>")

@@ -1,5 +1,5 @@
 from dataclasses import dataclass,field
-from typing import List,Dict,Union
+from typing import List,Dict,Union,Tuple
 from ..debug import Debug
 
 from datetime import datetime
@@ -97,6 +97,18 @@ class BoxInfo:
     @property
     def center(self):
         return ((self.x0+ self.x1)/2,(self.y0+self.y1)/2)
+    
+    def normalized_relative_to(self, origin_x: int, origin_y: int, factor_x: float, factor_y: float) -> "BoxInfo":
+        return BoxInfo(
+            x0=int((self.x0 - origin_x) * factor_x),
+            y0=int((self.y0 - origin_y) * factor_y),
+            x1=int((self.x1 - origin_x) * factor_x),
+            y1=int((self.y1 - origin_y) * factor_y),
+            text=self.text,
+            block_no=self.block_no,
+            side=self.side,
+            matched_keywords=self.matched_keywords.copy()
+        )
 
 @dataclass
 class FoundResult:
@@ -175,3 +187,25 @@ class ZoomScreen:
             labels_str = "\n  (no labels)"
         return info + labels_str
     
+    def normalized(self, output_size: Tuple[int,int]) -> "ZoomScreen":
+        crop_w = self.x1 - self.x0
+        crop_h = self.y1 - self.y0
+
+        factor_x = output_size[0] / crop_w
+        factor_y = output_size[1] / crop_h
+
+        new_labels = [
+            label.normalized_relative_to(self.x0, self.y0, factor_x, factor_y)
+            for label in self.labels
+        ]
+
+        # 返回一個座標基準換成 0,0 的新 ZoomScreen（方便繪製）
+        return ZoomScreen(
+            side=self.side,
+            x0=0,
+            y0=0,
+            x1=output_size[0],
+            y1=output_size[1],
+            zoom=1,
+            labels=new_labels
+        )

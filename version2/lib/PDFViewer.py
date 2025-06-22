@@ -77,12 +77,6 @@ class PDFViewer:
 
         front_blocks = self.front.get_blocks(page_idx)
         back_blocks = self.back.get_blocks(page_idx)
-        
-        self.front.get_trimmed_bounding_box_v6()
-        self.back.get_trimmed_bounding_box_v6()
-        
-        print(self.front.bounding_box)
-        print(self.back.bounding_box)
 
         results = []
         seen = set()

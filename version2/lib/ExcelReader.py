@@ -1,6 +1,7 @@
 from openpyxl import load_workbook
 from abc import  ABC, abstractmethod
 import re
+from .debug import Debug
 
 class Excel(ABC):
     def __init__(self):
@@ -45,17 +46,47 @@ class SOMReader(Excel):
         self.worksheet = self.workbook["工程專用"]
         self.path = path
     
+    
     def get_table(self):
-        return super().get_table()
-    
+        """回傳整張表(含標題)的二維清單"""
+        data = []
+        for row in self.worksheet.iter_rows(values_only=True):
+            data.append(list(row))
+        return data
+
+
     def get_pieces(self):
-        pass
-    
-    def get_pieces(self):
-        return 
-        
+        """去除標題，只取 A、B 欄，攤平成一維清單（不拆逗號）"""
+        data = self.get_table()
+        if len(data) <= 1:
+            return []
+
+        pieces = []
+        # 只取 A、B 欄（第0,1欄），去掉標題(第一列)
+        for row in data[1:]:
+            for col_index in [0, 1]:
+                if col_index < len(row):
+                    val = row[col_index]
+                    if val is not None and val != "":
+                        pieces.append(str(val).strip())
+        return pieces
+
+
     def get_keywords(self):
-        return super().get_keywords()
+        """拆逗號，去除括號內容，去重後回傳關鍵字"""
+        pieces = self.get_pieces()
+        seen = set()
+        result = []
+
+        for item in pieces:
+            parts = item.split(',')
+            for part in parts:
+                cleaned = re.sub(r"\(.*?\)", "", part).strip()  # 去除括號
+                if cleaned and cleaned not in seen:
+                    seen.add(cleaned)
+                    result.append(cleaned)
+
+        return result
         
 
 class ExcelReader:
@@ -110,6 +141,7 @@ class ExcelReader:
 
         return table_data
 
+    @Debug.event("get_pieces","cyan")
     def get_pieces(self):
         ws = self.worksheet
         boundary_rows = []
@@ -140,6 +172,7 @@ class ExcelReader:
                     if d_val is not None:
                         result.append(d_val)
 
+        print(result)
         return result
     
     def get_keywords(self):

@@ -813,12 +813,10 @@ class SinglePDF:
         
         return self.get_page(idx).get_pixmap(matrix=mat)
     
-    @Debug.event("get block","red")
     def get_blocks(self,idx:int=0):
         """建立搜尋頁面source"""
         return self.get_page(idx).get_text("blocks")
     
-    @Debug.event("get word","red")
     def get_words(self,idx:int=0):
         """建立搜尋頁面source"""
         return self.get_page(idx).get_text("words")

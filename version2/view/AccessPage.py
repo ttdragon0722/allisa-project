@@ -5,12 +5,15 @@ from tkinter import messagebox
 from tkinter import Toplevel, Scrollbar, Canvas
 
 from lib.PDFViewer import PDFViewer
-from lib.ExcelReader import ExcelReader
+from lib.ExcelReader import SOMReader
 from lib.data.models import FoundResult
 from lib.CV2ImageProcessor import DisplayEngine
 
 from lib.View import ViewResult
 from lib.debug import Debug
+
+
+from .components.ProgressBar import ProgressBar
 
 
 class AccessPage(tk.Frame):
@@ -20,15 +23,11 @@ class AccessPage(tk.Frame):
         self.controller = controller
         self.window_width = 1440
         self.window_height = 810
-
-        # 讀取PDF正反面的路徑
-        self.pdf_viewer = PDFViewer(
-            self.controller.shared_data.get("front_path", ""),
-            self.controller.shared_data.get("back_path", "")
-        )
+        
+        self.pdf_viewer:PDFViewer
         
         # Excel Read Engine
-        self.excel_reader = ExcelReader()
+        self.excel_reader = SOMReader()
         
         # View Result Engine
         self.view_result = ViewResult()
@@ -37,8 +36,7 @@ class AccessPage(tk.Frame):
         self.zoom_engine = DisplayEngine()
         self.minimap_engine = DisplayEngine()
         
-
-        self.bind("<<PDFPATHS_UPDATED>>", self.on_pdf_update)
+        self.bind("<<PDF_ENGINE_UPDATE>>", self.on_pdf_engine_update)
 
         self.build_ui()
     
@@ -59,14 +57,10 @@ class AccessPage(tk.Frame):
         print("AccessPage 收到的反面 PDF 路徑：", back)
 
     # Event: 路徑改變
-    @Debug.event("Event")
-    def on_pdf_update(self,event):
-        """pdf 路徑更新事件"""
-        print("set pdf paths")
-        
-        f,b = self.get_shared_paths()
-        self.pdf_viewer.front.path = f
-        self.pdf_viewer.back.path = b
+    @Debug.event("Event: PDF Engine 更換")
+    def on_pdf_engine_update(self,event):
+        """pdf引擎 更新事件"""
+        self.pdf_viewer = self.controller.shared_data.get("pdf_engine", "")
         
 
     # View: Excel功能列
@@ -264,6 +258,9 @@ class AccessPage(tk.Frame):
         search_btn = ttk.Button(top_right, text='使用重工資料搜尋', command=self.search_pdf)
         search_btn.pack(pady=5)
         
+        self.progress_component = ProgressBar(top_right)
+        self.progress_component.pack(fill='x', padx=10, pady=10)
+        
         self.build_search_result_section(top_right)
 
         # 右下 Minimap 區
@@ -350,26 +347,43 @@ class AccessPage(tk.Frame):
         self.update_ui()
 
     # Func: 搜尋按鈕
-    @Debug.event(color="yellow")
+    @Debug.event("開始搜尋",color="yellow")
     def search_pdf(self):
         """搜尋function"""
+        self.progress_component.enable()
+        self.progress_component.change_progress(self.search_start, self.search_done)
+        
+    # search 運算
+    def search_start(self,set_progress):
         # excel 拿到關鍵字
+        set_progress(5,"讀取關鍵字")
         keywords = self.excel_reader.get_keywords()
         # 搜尋結果
+        set_progress(10,"搜尋PDF...")
         result = self.pdf_viewer.search_pdf_multiple(keywords)
         
         print("搜尋資料：",keywords)
         print(result)
         
         # 更新狀態
+        set_progress(30,"物件運算中...")
         self.view_result.set_result(result)
+        # DBSCAN運算
+        print(self.view_result.group_DBSCAN())
+        set_progress(80,"繪圖...")
         self.set_pdf_zoom_and_minimap()
         
         # View: 更新搜尋結果
         self.update_search_result(result)
         
         # View 呈現 呈現兩張PDF Zoom區塊&Minimap
+        set_progress(100,"繪圖...")
         self.display_pdf()
+    
+    # search 運算結束
+    def search_done(self):
+        self.progress_component.disable()
+    
         
     def set_minimap(self):
         """minimap搜尋結果 設定資料""" 
@@ -402,9 +416,9 @@ class AccessPage(tk.Frame):
             self.view_result.result,
             zoom,
             1,
-            1
+            1,
+            (0,0,255)
         )
-        print(self.view_result.group_DBSCAN())
 
     def set_pdf_zoom_and_minimap(self):
         """Function: 設定結果資料"""
